@@ -30,7 +30,7 @@ from reportlab.lib.colors import black
 
 
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 
 # Chemin du logo (static)
