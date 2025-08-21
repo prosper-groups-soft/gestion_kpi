@@ -1,0 +1,53 @@
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <span>
+    {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ page_obj.paginator.count }}
+  </span>
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex">
+    {% if page_obj.has_previous %}
+    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.departement %}departement={{ request.GET.departement }}&{% endif %}page={{ page_obj.previous_page_number }}"
+      class="btn rounded-2 me-2 p-1" style="height: 30px; width: 30px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+        viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </a>
+    {% else %}
+    <button class="btn rounded-2 me-2 p-1 disabled" style="height: 30px; width: 30px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+        viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="btn btn-primary rounded-2 me-2" style="height: 30px; width: 30px;">{{ num }}</span>
+      {% else %}
+        <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.departement %}departement={{ request.GET.departement }}&{% endif %}page={{ num }}"
+          class="btn rounded-2 me-2 p-1" style="height: 30px; width: 30px;">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.departement %}departement={{ request.GET.departement }}&{% endif %}page={{ page_obj.next_page_number }}"
+      class="btn rounded-2 p-1" style="height: 30px; width: 30px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+        viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </a>
+    {% else %}
+    <button class="btn rounded-2 p-1 disabled" style="height: 30px; width: 30px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+        viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="d-flex"></div>
+  {% endif %}
+</div>

@@ -1,0 +1,58 @@
+
+{% load static %}
+<!-- Sidebar -->
+<aside class="navbar navbar-vertical navbar-expand-sm ps-1 pe-1 d-flex flex-column justify-content-between" style="background-color: #f9f9f9;">
+  <div class="w-100" style="height: 88vh !important; max-height: 88vh !important;">
+    <h1 class="navbar-brand navbar-brand-autodark w-100 text-center mt-2">
+      <a href="#">
+        <img src="{% static 'images/auto-lubumbashi-logo.webp' %}" class="rounded-circle" width="60" height="60" alt="Logo" />
+      </a>
+    </h1>
+    <div class="collapse navbar-collapse" id="sidebar-menu">
+      <ul class="nav nav-pills nav-vertical navbar-nav pt-lg-3 px-1">
+
+        <li class="nav-item {% if pagename == 'tableau-bord' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'departement:departement_tableau_bord' departement_slug %}">
+            <span class="nav-link-icon">
+              <!-- icône tableau de bord -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gauge-icon lucide-gauge">
+                <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+              </svg>
+            </span>
+            <span class="nav-link-title">Tableau de bord</span>
+          </a>
+        </li>
+
+        <li class="nav-item {% if pagename == 'soumissions' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'departement:departement_soumissions' departement_slug %}">
+            <span class="nav-link-icon">
+              <!-- icône soumissions -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-icon lucide-send">
+                <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>
+              </svg>
+            </span>
+            <span class="nav-link-title">Soumissions</span>
+          </a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+  <!-- Bloc utilisateur -->
+  <div class="py-2 border bg-white rounded-3 d-flex mb-2">
+    {% with profile=request.user.userprofile %}
+      <img src="{% static 'images/profil.png' %}" alt="Photo Utilisateur" class="rounded-circle mx-1" width="40" height="40">
+      <div>
+        <div class="fw-bold text-truncate" style="width: 145px;">
+          {{ request.user.get_full_name }}
+        </div>
+        <div class="text-muted small text-truncate" style="width: 145px;">
+          D:{{ profile.departement }}
+        </div>
+      </div>
+    {% endwith %}
+  </div>
+
+</aside>
+

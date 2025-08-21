@@ -1,0 +1,382 @@
+{% load static %}
+{% load custom_filters filters_depart %}
+{% load kpi_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Admin | KPIs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.css' %}" />
+  <style>
+    * { 
+      font-family: "Noto Sans" !important; 
+    }
+    .selected, .nav-link:hover {
+      background-color: #a2b8ff;
+      border-radius: 6px;
+      color: #000 !important;
+    }
+    .nav-link { color: #000 !important; }
+
+    .input-search:focus {
+      border-color: #80aad3;
+      outline: 0;
+      box-shadow: 0 1px 1px rgba(252, 253, 254, 0.06), 0 0 0 0.25rem rgba(0, 84, 166, 0.25) !important;
+    }
+  </style>
+    <style>
+    .offcanvas {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 350px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      visibility: hidden;
+      z-index: 1050;
+    }
+
+    .offcanvas.show {
+      visibility: visible;
+    }
+
+    .offcanvas-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .offcanvas-body {
+      padding: 1rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+
+<body class="bg-white">
+  <div class="page">
+    {% include 'smq/includes/sidebar.html' with pagename=pagename %}
+
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between align-items-center w-100">
+          <h2 class="page-title">KPIs</h2>
+          <div class="d-flex gap-3">
+            <a href="#" id="off-canvas-notification" class="btn btn-icon position-relative" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-icon lucide-bell">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+              </svg>
+              <span id="badge-soumissions" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; color: white; display: none;"></span>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body mb-0 mt-3">
+        <div class="container-xl">
+
+          <!-- Filtres -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div style="width: 450px;">
+              <form method="get" class="input-icon">
+                <span class="input-icon-addon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </span>
+                <input 
+                  type="text" 
+                  name="search" 
+                  value="{{ request.GET.search|default:'' }}" 
+                  class="form-control border-0 shadow-none rounded-3 input-search"
+                  style="height: 34px; background-color: rgba(0, 0, 0, 0.03);" 
+                  placeholder="Rechercher..." 
+                />
+              </form>
+            </div>
+
+            <form method="get" class="d-flex align-items-center justify-content-center" id="filterForm">
+              <select name="departement" class="form-select me-2" style="height: 27px; padding-top: 3px; width: auto;"
+                      onchange="document.getElementById('filterForm').submit();">
+                {% for val, label in departements %}
+                  <option value="{{ val }}" {% if val == filtre_departement %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+
+              <select name="annee" class="form-select me-2" style="height: 27px; padding-top: 3px; width: auto;"
+                      onchange="document.getElementById('filterForm').submit();">
+                {% for a in annees %}
+                  <option value="{{ a }}" {% if a|stringformat:"s" == filtre_annee %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+              </select>
+
+              <select name="mois" class="form-select me-2" style="height: 27px; padding-top: 3px; width: auto;"
+                      onchange="document.getElementById('filterForm').submit();">
+                {% for num, nom in mois.items %}
+                  <option value="{{ num }}" {% if num|stringformat:"s" == filtre_mois %}selected{% endif %}>{{ nom }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+
+          <!-- Tableau -->
+          <div class="table-responsive mt-4" style="max-height: 470px;">
+            <table class="table table-vcenter">
+
+              <thead class="sticky-top">
+                <tr>
+                  <th style="background:rgb(243, 243, 243)">Titre</th>
+                  <th style="background:rgb(243, 243, 243)">Formule</th>
+                  <th style="background:rgb(243, 243, 243)">Fréquence</th>
+                  <th style="background:rgb(243, 243, 243)">Observation</th>
+                  <th style="background:rgb(243, 243, 243)">Valeur / Cible</th>
+                  <th style="background:rgb(243, 243, 243)">Source</th>
+                  <th style="background:rgb(243, 243, 243)">État</th>
+                  <th style="background:rgb(243, 243, 243)">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ligne in lignes %}
+                  <tr>
+                    <!-- Titre -->
+                    <td>{{ ligne.kpi.nom }}</td>
+
+                    <!-- Formule -->
+                    <td>
+                      {% if ligne.kpi.formule_mathjax %}
+                        <div class="small-text">$$ {{ ligne.kpi.formule_mathjax }} $$</div>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+
+                    <!-- Fréquence -->
+                    <td>{{ ligne.kpi.frequence|default:"—" }}</td>
+
+                    <!-- Observation -->
+                    <td>
+                      {% if ligne.soumission and ligne.soumission.observation %}
+                        {{ ligne.soumission.observation }}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+
+                    <!-- Valeur / Cible -->
+                    <td>
+
+                      {% if ligne.soumission and ligne.soumission.facteurs_utilises %}
+                        {% for key in ligne.soumission.facteurs_utilises %}
+                          <div style="display: flex; justify-content: space-between; white-space: nowrap; margin-bottom: 5px; width: 220px;">
+                            <strong>{{ key|replace_chars:"_/"|capfirst }} :</strong>
+                            <span style="{% if key == 'taux_turnover' and ligne.soumission.is_conform == False %}color:red{% endif %};">
+                              {{ ligne.soumission.facteurs_utilises|maybe_percent:key }}
+                            </span>
+                          </div>
+                        {% endfor %}
+                      {% else %}
+                        —
+                      {% endif %}
+
+                      <div class="text-nowrap">
+                        <strong>Cible :</strong>
+                        <span>
+                          {% if ligne.cible %}
+                            {{ ligne.cible }}
+                          {% else %}
+                            <em>—</em>
+                          {% endif %}
+                        </span>
+                        <form method="post" action="{% url 'update_kpi_target' %}" class="d-inline-flex align-items-center" style="gap: 4px;">
+                          {% csrf_token %}
+                          <input type="hidden" name="kpi_id" value="{{ ligne.kpi.id }}">
+                          <input type="hidden" name="departement" value="{{ ligne.kpi.departement }}">
+                          <input type="hidden" name="annee" value="{{ ligne.annee }}">
+                          <input type="hidden" name="mois" value="{{ ligne.mois|default:0 }}">
+                          <input type="hidden" name="filtre_annee" value="{{ filtre_annee }}">
+                          <input type="hidden" name="filtre_mois" value="{{ filtre_mois }}">
+                          <input type="hidden" name="filtre_departement" value="{{ filtre_departement }}">
+                          <input type="text" name="valeur_cible" class="form-control form-control-sm" style="width: 80px;" value="{{ ligne.cible|default:'' }}" placeholder="Ex: >= 10">
+                          <button type="submit" class="btn btn-sm btn-outline-primary">✔</button>
+                        </form>
+                      </div>
+                    </td>
+
+                    <!-- Source -->
+                    <td>{{ ligne.kpi.get_source_type_display|default:"—" }}</td>
+
+                    <!-- État -->
+                    <td>
+                      {% if ligne.soumission %}
+                        {% if ligne.soumission.etat == 'Validée' %}
+                          <span class="badge bg-green-lt badge-status">{{ ligne.soumission.etat }}</span>
+                        {% elif ligne.soumission.etat == 'En attente' %}
+                          <span class="badge bg-yellow-lt badge-status">{{ ligne.soumission.etat }}</span>
+                        {% else %}
+                          <span class="badge bg-red-lt badge-status">{{ ligne.soumission.etat }}</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="badge bg-muted-lt">Aucune soumission</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td>
+                      {% if ligne.soumission %}
+                        <form method="post" class="d-flex" action="{% url 'changer_etat_kpi' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="soumission_id" value="{{ ligne.soumission.id }}">
+                          <select name="etat" class="form-select form-select-sm" style="width:auto; display:inline;">
+                            {% for val, label in ligne.soumission.ETAT_CHOICES %}
+                              <option value="{{ val }}" {% if val == ligne.soumission.etat %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                          </select>
+                          <button type="submit" class="btn btn-sm btn-outline-primary ms-1">✔</button>
+                        </form>
+                      {% else %}
+                        <span class="text-muted">Aucune action</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="9" class="text-center text-muted">Aucune donnée disponible.</td></tr>
+                {% endfor %}
+              </tbody>
+
+
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Off-canvas notifications -->
+  <div id="offCanvas" class="offcanvas offcanvas-end" tabindex="-1">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Soumissions en attente</h5>
+      <button type="button" class="btn-close d-flex align-items-center justify-content-center p-1" aria-label="Close" id="closeOffCanvas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="offcanvas-body" id="offCanvasBody" style="max-height: 400px; overflow-y: auto;">
+      <p class="text-muted">Chargement...</p>
+    </div>
+  </div>
+
+  <script src="{% static 'libs/tabler/js/tabler.js' %}"></script>
+  <!-- Charger MathJax -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+    const offCanvasBtn = document.getElementById("off-canvas-notification");
+    const offCanvas = document.getElementById("offCanvas");
+    const closeOffCanvasBtn = document.getElementById("closeOffCanvas");
+    const offCanvasBody = document.getElementById("offCanvasBody");
+
+    offCanvasBtn.addEventListener("click", () => {
+      // Afficher l'off-canvas
+      offCanvas.classList.add("show");
+      offCanvas.style.visibility = "visible";
+      offCanvas.style.transform = "translateX(0)";
+
+      // Charger les soumissions via AJAX
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          if (data.soumissions.length === 0) {
+            offCanvasBody.innerHTML = '<p class="text-muted">Aucune soumission en attente.</p>';
+            return;
+          }
+
+          const list = document.createElement("ul");
+          list.className = "list-group list-group-flush";
+
+          data.soumissions.forEach(s => {
+            const item = document.createElement("li");
+            item.className = "list-group-item border rounded-2";
+            item.innerHTML = `
+              <strong>${s.kpi}</strong><br/>
+              Valeur : ${s.valeur}<br/>
+              Période : ${s.periode_mois}/${s.periode_annee}<br/>
+              Soumis par : ${s.soumis_par}<br/>
+              Département : ${s.departement}<br/>
+              ${s.observation ? "Observation : " + s.observation.substring(0, 50) : ""}
+            `;
+            list.appendChild(item);
+          });
+
+          offCanvasBody.innerHTML = "";
+          offCanvasBody.appendChild(list);
+        })
+        .catch(err => {
+          offCanvasBody.innerHTML = '<p class="text-danger">Erreur lors du chargement.</p>';
+          console.error(err);
+        });
+    });
+
+    closeOffCanvasBtn.addEventListener("click", () => {
+      offCanvas.classList.remove("show");
+      offCanvas.style.transform = "translateX(100%)";
+      setTimeout(() => offCanvas.style.visibility = "hidden", 300);
+    });
+  </script>
+
+  <script>
+    const badge = document.getElementById("badge-soumissions");
+
+    function updateBadgeCount() {
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          const count = data.soumissions.length;
+          if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = "inline-block";
+          } else {
+            badge.style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Erreur lors de la récupération du badge:", err);
+        });
+    }
+
+    // Mettre à jour au chargement de la page
+    updateBadgeCount();
+
+    // Optionnel : rafraîchir toutes les 30 secondes
+    setInterval(updateBadgeCount, 30000);
+  </script>
+
+</body>
+</html>
+

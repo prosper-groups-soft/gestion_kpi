@@ -1,0 +1,521 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Admin | Utilisateurs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.css' %}" />
+  <style>
+    * { 
+      font-family: "Noto Sans" !important; 
+    }
+    
+    .selected, .nav-link:hover {
+      background-color: #a2b8ff;
+      border-radius: 6px;
+      color: #000 !important;
+    }
+
+    .nav-link { color: #000 !important; }
+    .input-search:focus {
+      border-color: #80aad3;
+      outline: 0;
+      box-shadow: 0 1px 1px rgba(252, 253, 254, 0.06), 0 0 0 0.25rem rgba(0, 84, 166, 0.25) !important;
+    }
+  </style>
+    <style>
+    .offcanvas {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 350px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      visibility: hidden;
+      z-index: 1050;
+    }
+
+    .offcanvas.show {
+      visibility: visible;
+    }
+
+    .offcanvas-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .offcanvas-body {
+      padding: 1rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+
+<body class="bg-white">
+  <div class="page">
+
+    <!-- Sidebar -->
+    {% include 'smq/includes/sidebar.html' with pagename=pagename %}
+
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between">
+          <h2 class="page-title">Utilisateurs</h2>
+          <div class="d-flex gap-3">
+            <a href="#" id="off-canvas-notification" class="btn btn-icon position-relative" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-icon lucide-bell">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+              </svg>
+              <span id="badge-soumissions" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; color: white; display: none;"></span>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body mb-0 mt-4">
+        <div class="container-xl">
+
+          <div class="d-flex justify-content-between align-items-center mb-4 w-100">
+            <form method="get" class="d-flex justify-content-between align-items-center mb-4 w-100" style="gap:1rem;">
+              <div style="width: 450px;">
+                <div class="input-icon">
+                  <span class="input-icon-addon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                  </span>
+                  <input type="text" name="q" value="{{ search_query }}" class="form-control border-0 shadow-none rounded-3 input-search"
+                    style="height: 34px; background-color: rgba(0, 0, 0, 0.03);" placeholder="Rechercher..." />
+                </div>
+              </div>
+
+              <!-- Filtres -->
+              <div class="d-flex justify-content-end align-items-center gap-2">
+                <select name="departement" class="form-select" style="width: auto; height: 26px; padding-top: 2px;" onchange="this.form.submit()">
+                  <option value="">Tous les départements</option>
+                  <option value="SMQ" {% if departement_filter == "SMQ" %}selected{% endif %}>SMQ</option>
+                  <option value="Ressources humaines" {% if departement_filter == "Ressources humaines" %}selected{% endif %}>Ressources humaines</option>
+                  <option value="Logistique" {% if departement_filter == "Logistique" %}selected{% endif %}>Logistique</option>
+                  <option value="Ventes" {% if departement_filter == "Ventes" %}selected{% endif %}>Ventes</option>
+                  <option value="Relations clients" {% if departement_filter == "Relations clients" %}selected{% endif %}>Relations clients</option>
+                </select>
+
+                <!-- BOUTON AJOUT -->
+                <button type="button" class="btn btn-primary me-2" style="height: 26px;" data-bs-target="#modal-add-user" data-bs-toggle="modal">
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+
+
+          {% if page_obj %}
+            <!-- Tableau utilisateurs -->
+            <div class="table-responsive mt-3" style="max-height: 442px; height: 442px; overflow-y: auto;">
+              <table class="table table-vcenter">
+                <thead>
+                  <tr>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Nom complet
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Email
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Identifiant
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Mot de passe
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Genre
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Département
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Téléphone
+                    </th>
+                    <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for userprofile in page_obj %}
+                    <tr>
+                      <td>{{ userprofile.user.get_full_name }}</td>
+                      <td>{{ userprofile.user.email }}</td>
+                      <td>{{ userprofile.identifiant }}</td>
+                      <td>
+                        <span id="password-{{ userprofile.id }}" data-password="{{ userprofile.plain_password }}">
+                          ••••••••
+                        </span>
+                        <button type="button" onclick="togglePassword({{ userprofile.id }})" style="margin-left: 5px; border: none; background-color: white;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye">
+                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                      </td>
+                      <td>{{ userprofile.sexe }}</td>
+                      <td>{{ userprofile.departement }}</td>
+                      <td>{{ userprofile.numero_telephone }}</td>
+                      <td>
+                        <button type="button" class="btn p-0 border-0 me-2 text-dark"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modal-edit-user"
+                          data-user-id="{{ userprofile.id }}"
+                          data-full-name="{{ userprofile.user.get_full_name }}"
+                          data-email="{{ userprofile.user.email }}"
+                          data-sexe="{{ userprofile.sexe }}"
+                          data-identifiant="{{ userprofile.identifiant }}"
+                          data-date-naissance="{{ userprofile.date_naissance|date:'Y-m-d' }}"
+                          data-telephone="{{ userprofile.numero_telephone }}"
+                          data-departement="{{ userprofile.departement }}"
+                        >
+                          <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" />
+                          </svg> 
+                        </button>
+                        <a href="{% url 'smq/delete-utilisateurs' userprofile.id %}" class="text-red" onclick="return confirm('Supprimer ce rapport ?');">
+                          <!-- icône suppression --> 
+                          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline">
+                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+                          </svg>
+                        </a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            {% include "smq/includes/pagination.html" with page_obj=page_obj %}
+
+          {% else %}
+            <!-- EMPTY STATE -->
+            <div class="text-center mt-5 d-flex flex-column align-items-center justify-content-center" style="height: 442px;">
+              {% if search_query %}
+                <img src="{% static 'images/empty-search.jpg' %}" width="135" height="70" />
+                <p class="fw-bold p-0 m-0" style="font-size: 18px;">
+                  Aucun résultat pour « {{ search_query }} ».
+                </p>
+                <p class="text-muted">Essayez un autre terme ou réinitialisez les filtres.</p>
+              {% else %}
+                <img class="mb-2" src="{% static 'images/empty-state.jpg' %}" width="166" height="81" />
+                <p class="fw-bold p-0 m-0" style="font-size: 18px;">
+                  Aucun utilisateur.
+                </p>
+                <p class="text-muted mt-0 pt-0">
+                  Ajoutez des utilisateurs pour commencer.
+                </p>
+                <button type="button" class="btn btn-primary me-2" style="height: 26px;" data-bs-target="#modal-add-user" data-bs-toggle="modal">
+                  Ajouter
+                </button>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modale ajout utilisateur -->
+  <div class="modal fade" id="modal-add-user" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+        <div class="modal-content">
+          <div class="modal-header" style="min-height: 40px;">
+            <h5 class="modal-title">Ajouter un utilisateur</h5>
+            <button type="button" class="btn-close" style="height: 40px; width: 40px;" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form method="POST" action="{% url 'smq/add-utilisateurs' %}" id="form-add-utilisateurs">
+              {% csrf_token %}
+              <div class="mb-2">
+                <label class="form-label">Nom complet</label>
+                <input type="text" name="full_name" style="height: 30px;" class="form-control" placeholder="Nom complet" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Identifiant</label>
+                <input type="text" name="identifiant" style="height: 30px;" class="form-control" placeholder="Identifiant" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Sexe</label>
+                <select name="sexe" class="form-select" style="height: 30px; padding-top: 3px;" required>
+                  <option>Masculin</option>
+                  <option>Féminin</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Date de naissance</label>
+                <input type="date" name="date_naissance" style="height: 30px; padding-top: 3px;" class="form-control" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Téléphone</label>
+                <input type="text" name="numero_telephone" style="height: 30px;" class="form-control" placeholder="+243 ..." required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" style="height: 30px;" class="form-control" placeholder="email@exemple.com" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Mot de passe</label>
+                <input type="password" name="password" style="height: 30px;" class="form-control" placeholder="Mot de passe" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Département</label>
+                <select name="departement" class="form-select" style="height: 30px; padding-top: 3px;" required>
+                  <option value="SMQ">SMQ</option>
+                  <option value="Ressources humaines">Ressources humaines</option>
+                  <option value="Garage">Garage</option>
+                  <option value="Ventes">Ventes</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn" data-bs-dismiss="modal" style="height: 27px;">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" style="height: 27px;" form="form-add-utilisateurs">
+              Ajouter
+            </button>
+          </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Modale édition utilisateur -->
+  <div class="modal fade" id="modal-edit-user" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-md">
+      <div class="modal-content">
+        <div class="modal-header" style="min-height: 40px;">
+          <h5 class="modal-title">Modifier l'utilisateur</h5>
+          <button type="button" class="btn-close" style="height: 40px; width: 40px;" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <form method="POST" action="{% url 'smq/edit-utilisateurs' %}" id="form-edit-utilisateurs">
+            {% csrf_token %}
+            <!-- ID utilisateur caché -->
+            <input type="hidden" name="user_id" id="edit-user-id">
+
+            <!-- Nom complet -->
+            <div class="mb-2">
+              <label class="form-label">Nom complet</label>
+              <input type="text" name="full_name" style="height: 30px;" id="edit-full-name" class="form-control" required>
+            </div>
+
+            <!-- Identifiant -->
+            <div class="mb-2">
+              <label class="form-label">Identifiant</label>
+              <input type="text" name="identifiant" id="edit-identifiant" style="height: 30px;" class="form-control" placeholder="Identifiant" required>
+            </div>
+
+            <!-- Sexe -->
+            <div class="mb-2">
+              <label class="form-label">Sexe</label>
+              <select name="sexe" id="edit-sexe" class="form-select" style="height: 30px; padding-top: 3px;" required>
+                <option value="Masculin">Masculin</option>
+                <option value="Féminin">Féminin</option>
+              </select>
+            </div>
+
+            <!-- Date de naissance -->
+            <div class="mb-2">
+              <label class="form-label">Date de naissance</label>
+              <input type="date" name="date_naissance" style="height: 30px; padding-top: 3px;" id="edit-date-naissance" class="form-control" required>
+            </div>
+
+            <!-- Téléphone -->
+            <div class="mb-2">
+              <label class="form-label">Téléphone</label>
+              <input type="text" name="numero_telephone" id="edit-telephone" style="height: 30px;" class="form-control" required>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" id="edit-email" style="height: 30px;" class="form-control" required>
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="mb-2">
+              <label class="form-label">Nouveau mot de passe</label>
+              <input type="password" name="password" class="form-control" style="height: 30px;" placeholder="Nouveau mot de passe">
+            </div>
+
+            <!-- Département -->
+            <div class="mb-2">
+              <label class="form-label">Département</label>
+              <select name="departement" style="height: 30px; padding-top: 3px;" id="edit-departement" class="form-select" required>
+                <option value="SMQ">SMQ</option>
+                <option value="Ressources humaines">Ressources humaines</option>
+                <option value="Garage">Garage</option>
+                <option value="Ventes">Ventes</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn" style="height: 27px;"  data-bs-dismiss="modal">
+            Annuler
+          </button>
+          <button type="submit" form="form-edit-utilisateurs" class="btn btn-primary" style="height: 27px;" >
+            Modifier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Off-canvas notifications -->
+  <div id="offCanvas" class="offcanvas offcanvas-end" tabindex="-1">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Soumissions en attente</h5>
+      <button type="button" class="btn-close d-flex align-items-center justify-content-center p-1" aria-label="Close" id="closeOffCanvas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="offcanvas-body" id="offCanvasBody" style="max-height: 400px; overflow-y: auto;">
+      <p class="text-muted">Chargement...</p>
+    </div>
+  </div>
+
+  <script src="{% static 'libs/tabler/js/tabler.js' %}"></script>
+  <script>
+    const editModal = document.getElementById('modal-edit-user');
+    editModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+
+      // Remplir les champs du formulaire
+      document.getElementById('edit-user-id').value = button.getAttribute('data-user-id');
+      document.getElementById('edit-full-name').value = button.getAttribute('data-full-name');
+      document.getElementById('edit-identifiant').value = button.getAttribute('data-identifiant');
+      document.getElementById('edit-email').value = button.getAttribute('data-email');
+      document.getElementById('edit-sexe').value = button.getAttribute('data-sexe');
+      document.getElementById('edit-date-naissance').value = button.getAttribute('data-date-naissance');
+      document.getElementById('edit-telephone').value = button.getAttribute('data-telephone');
+      document.getElementById('edit-departement').value = button.getAttribute('data-departement');
+    });
+  </script>
+  <script>
+    function togglePassword(id) {
+        const span = document.getElementById(`password-${id}`);
+        const isHidden = span.textContent.includes('•');
+        span.textContent = isHidden 
+            ? span.getAttribute('data-password')   // Affiche le vrai mot de passe
+            : '••••••••';                           // Masque à nouveau
+    }
+  </script>
+    <script>
+    const offCanvasBtn = document.getElementById("off-canvas-notification");
+    const offCanvas = document.getElementById("offCanvas");
+    const closeOffCanvasBtn = document.getElementById("closeOffCanvas");
+    const offCanvasBody = document.getElementById("offCanvasBody");
+
+    offCanvasBtn.addEventListener("click", () => {
+      // Afficher l'off-canvas
+      offCanvas.classList.add("show");
+      offCanvas.style.visibility = "visible";
+      offCanvas.style.transform = "translateX(0)";
+
+      // Charger les soumissions via AJAX
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          if (data.soumissions.length === 0) {
+            offCanvasBody.innerHTML = '<p class="text-muted">Aucune soumission en attente.</p>';
+            return;
+          }
+
+          const list = document.createElement("ul");
+          list.className = "list-group list-group-flush";
+
+          data.soumissions.forEach(s => {
+            const item = document.createElement("li");
+            item.className = "list-group-item border rounded-2";
+            item.innerHTML = `
+              <strong>${s.kpi}</strong><br/>
+              Valeur : ${s.valeur}<br/>
+              Période : ${s.periode_mois}/${s.periode_annee}<br/>
+              Soumis par : ${s.soumis_par}<br/>
+              Département : ${s.departement}<br/>
+              ${s.observation ? "Observation : " + s.observation.substring(0, 50) : ""}
+            `;
+            list.appendChild(item);
+          });
+
+          offCanvasBody.innerHTML = "";
+          offCanvasBody.appendChild(list);
+        })
+        .catch(err => {
+          offCanvasBody.innerHTML = '<p class="text-danger">Erreur lors du chargement.</p>';
+          console.error(err);
+        });
+    });
+
+    closeOffCanvasBtn.addEventListener("click", () => {
+      offCanvas.classList.remove("show");
+      offCanvas.style.transform = "translateX(100%)";
+      setTimeout(() => offCanvas.style.visibility = "hidden", 300);
+    });
+  </script>
+
+  <script>
+    const badge = document.getElementById("badge-soumissions");
+
+    function updateBadgeCount() {
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          const count = data.soumissions.length;
+          if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = "inline-block";
+          } else {
+            badge.style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Erreur lors de la récupération du badge:", err);
+        });
+    }
+
+    // Mettre à jour au chargement de la page
+    updateBadgeCount();
+
+    // Optionnel : rafraîchir toutes les 30 secondes
+    setInterval(updateBadgeCount, 30000);
+  </script>
+
+</body>
+</html>

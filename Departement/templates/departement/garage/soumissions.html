@@ -1,0 +1,292 @@
+{% load static filters_depart %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Soumissions KPI - Garage</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.css' %}" />
+  <style>
+    * { font-family: "Noto Sans", sans-serif !important; }
+    .selected, .nav-link:hover {
+      background-color: #a2b8ff;
+      border-radius: 6px;
+      color: #000 !important;
+    }
+    .nav-link {
+      color: #000 !important;
+    }
+    .badge-status {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+    }
+    .source-selector {
+      min-width: 140px;
+    }
+    .kpi-row {
+      vertical-align: middle;
+    }
+    .small-label {
+      font-size: 0.7rem;
+      color: #555;
+    }
+    .modal-body .form-control-plaintext {
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-white">
+  <div class="page">
+    {% include 'departement/includes/sidebar.html' with pagename='soumissions' departement_slug='garage' %}
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between align-items-center">
+          <div class="d-flex justify-content-between w-100">
+            <h2 class="page-title">Soumissions KPI — Garage</h2>
+            <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon">
+                <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body mt-4">
+        <div class="container-xl">
+
+          <!-- filtres période -->
+          <form method="get" class="d-flex gap-2 mb-4 flex-wrap" id="periodeFilterForm">
+            <div>
+              <label class="form-label" for="filter-year">Année</label>
+              <select id="filter-year" name="annee" class="form-select" style="height:28px; padding-top: 3px;"
+                      onchange="document.getElementById('periodeFilterForm').submit();">
+                {% for y in years %}
+                  <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="filter-month">Mois</label>
+              <select id="filter-month" name="mois" class="form-select" style="height:28px; padding-top: 3px;"
+                      onchange="document.getElementById('periodeFilterForm').submit();">
+                {% for num, name in months %}
+                  <option value="{{ num }}" {% if month|stringformat:"s" == num|stringformat:"s" %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </form>
+
+          <!-- Table des KPI -->
+          <div class="table-responsive" style="max-height: 460px; overflow-y:auto;">
+            
+            <table class="table table-vcenter" summary="Liste des KPIs avec leur formule, cible, fréquence, observation, valeurs calculées, source, état et actions">
+              <thead class="sticky-top">
+                <tr>
+                  <th scope="col" style="background:rgb(243, 243, 243)">KPI</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Formule</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Cible</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Fréquence</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Observation</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Valeurs calculées</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Source</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">État</th>
+                  <th scope="col" style="background:rgb(243, 243, 243)">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for kpi, target, source_type in kpis_with_targets %}
+                  {% with latest=latest_submissions|dict_get:kpi.id %}
+                    <tr class="kpi-row">
+                      <td>{{ kpi.nom }}</td>
+                      <td><div class="small-text">$$ {{ kpi.formule_mathjax }} $$</div></td>
+                      <td class="text-nowrap">{% if target %}{{ target }}{% else %}Non défini{% endif %}</td>
+                      <td>{{ kpi.frequence }}</td>
+
+                      <!-- Observation -->
+                      <td>
+                        {% if latest and latest.observation %}
+                          {{ latest.observation }}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <!-- Valeurs calculées -->
+                      <td>
+                        {% if latest %}
+                          {% for key, value in latest.facteurs_utilises.items %}
+                            <div style="display: flex; justify-content: space-between; white-space: nowrap; margin-bottom: 5px; width: 220px;">
+                              <strong>{{ key|replace_chars:"_/"|capfirst }} :</strong>
+                              <span style="{% if key == 'taux_fidelisation' and latest.is_conform == False %}color:red{% endif %};">
+                                {{ latest.facteurs_utilises|maybe_percent:key }}
+                              </span>
+                            </div>
+                          {% endfor %}
+                        {% else %}
+                          —
+                        {% endif %}
+                      </td>
+
+                      <td>{% if kpi.source_type %}{{ kpi.get_source_type_display }}{% else %}—{% endif %}</td>
+                      <td>
+                        {% if latest %}
+                          {% if latest.etat == 'Validée' %}
+                            <span class="badge bg-green-lt badge-status">{{ latest.etat }}</span>
+                          {% elif latest.etat == 'En attente' %}
+                            <span class="badge bg-yellow-lt badge-status">{{ latest.etat }}</span>
+                          {% else %}
+                            <span class="badge bg-red-lt badge-status">{{ latest.etat }}</span>
+                          {% endif %}
+                        {% else %}
+                          <span class="text-muted">Pas de soumission</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <button class="btn btn-outline-primary" style="height: 28px;" data-bs-toggle="modal"
+                                data-bs-target="#modal-submit-kpi"
+                                data-kpi-id="{{ kpi.id }}"
+                                data-kpi-name="{{ kpi.nom }}"
+                                data-formule="{{ kpi.formule }}"
+                                data-cible="{% if target %}{{ target }}{% else %}N/A{% endif %}"
+                                data-frequence="{{ kpi.frequence }}"
+                                data-formule-mathjax="{{ kpi.formule_mathjax }}"
+                                data-source-type="{{ source_type }}">
+                          Soumettre
+                        </button>
+                      </td>
+                    </tr>
+                  {% endwith %}
+                {% empty %}
+                  <tr>
+                    <td colspan="9" class="text-center text-muted">Aucun KPI trouvé pour le département.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal soumission individuelle -->
+  <div class="modal fade" id="modal-submit-kpi" tabindex="-1" aria-labelledby="modal-submit-kpi-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" enctype="multipart/form-data" id="form-submit-kpi">
+          {% csrf_token %}
+          <input type="hidden" name="kpi_id" id="modal-kpi-id" />
+          <input type="hidden" name="periode_annee" value="{{ year }}" />
+          <input type="hidden" name="periode_mois" value="{{ month }}" />
+
+          <div class="modal-header" style="min-height: 40px;">
+            <h5 class="modal-title" id="modal-submit-kpi-label">Soumettre KPI <span id="modal-kpi-name"></span></h5>
+            <button type="button" class="btn-close" style="width: 40px; height: 40px;" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="mb-2">
+              <label class="form-label">Formule</label>
+              <div class="form-control-plaintext" id="modal-formule"></div>
+              <div class="form-control-plaintext" id="modal-formule-mathjax"></div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label">Cible</label>
+              <div class="form-control-plaintext" id="modal-cible"></div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label" for="modal-source">Source</label>
+              <select name="source_type" id="modal-source" class="form-select source-selector" style="height: 28px; padding-top: 3px;" required>
+                <option value="manuel">Saisie manuelle</option>
+                <option value="base">Extraction base de données</option>
+                <option value="fichier">Importer un fichier</option>
+              </select>
+            </div>
+
+            <div class="mb-2" id="field-manual">
+              <label class="form-label" for="input-valeur">Valeur</label>
+              <input type="text" name="valeur" id="input-valeur" class="form-control" style="height: 28px;" placeholder="Entrer la valeur" />
+            </div>
+
+            <div class="mb-2 d-none" id="field-file">
+              <label class="form-label" for="input-fichier">Fichier (Excel)</label>
+              <input type="file" name="fichier" id="input-fichier" class="form-control" style="height: 28px; padding-top: 3px;" accept=".xls,.xlsx,.csv" />
+              <div class="label mt-1">Le système pourra extraire automatiquement la valeur selon la configuration.</div>
+            </div>
+
+            <div class="mb-2 d-none" id="field-base">
+              <div class="label">La valeur sera extraite automatiquement depuis la base interne.</div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn" style="height: 28px;" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" style="height: 28px;">Soumettre</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'libs/tabler/js/tabler.js' %}"></script>
+  <!-- Charger MathJax -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script>
+    const submitModal = document.getElementById('modal-submit-kpi');
+
+    submitModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      document.getElementById('modal-kpi-id').value = btn.getAttribute('data-kpi-id');
+      document.getElementById('modal-kpi-name').textContent = btn.getAttribute('data-kpi-name');
+      document.getElementById('modal-formule').textContent = btn.getAttribute('data-formule');
+
+      // Injecte la formule
+      const formula = btn.getAttribute('data-formule-mathjax');
+      const container = document.getElementById('modal-formule-mathjax');
+      container.textContent = `$$${formula}$$`;
+
+      // Demande à MathJax de la rendre
+      if (window.MathJax) {
+          MathJax.typesetPromise([container]).catch(function(err) {
+              console.error(err);
+          });
+      }
+
+      document.getElementById('modal-cible').textContent = btn.getAttribute('data-cible');
+
+      const sourceSelect = document.getElementById('modal-source');
+
+      function updateSourceFields() {
+        const value = sourceSelect.value;
+        document.getElementById('field-manual').classList.toggle('d-none', value !== 'manuel');
+        document.getElementById('field-file').classList.toggle('d-none', value !== 'fichier');
+        document.getElementById('field-base').classList.toggle('d-none', value !== 'base');
+      }
+
+      sourceSelect.removeEventListener('change', updateSourceFields);
+      sourceSelect.addEventListener('change', updateSourceFields);
+
+      // Définir la valeur sélectionnée
+      const selectedValue = btn.getAttribute('data-source-type') || 'manuel';
+      sourceSelect.value = selectedValue;
+
+      // Désactiver toutes les autres options
+      Array.from(sourceSelect.options).forEach(opt => {
+        opt.disabled = opt.value !== selectedValue;
+      });
+
+      updateSourceFields();
+    });
+  </script>
+
+</body>
+</html>

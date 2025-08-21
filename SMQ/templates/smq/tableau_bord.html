@@ -1,0 +1,322 @@
+{% load static filters_depart %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>SMQ | Tableau de bord</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.min.css' %}" />
+  <style>
+    * { font-family: "Noto Sans" !important; }
+    .selected, .nav-link:hover { background-color: #a2b8ff; border-radius: 6px; color: #000 !important; }
+    .nav-link { color: #000 !important; }
+    .card-metric { text-align: center; padding: 15px; border-radius: 8px; background: #f9fafb; border: 1px solid #e5e7eb; }
+    .card-metric h3 { font-size: 1rem; color: #374151; }
+    .card-metric .display-4 { font-size: 2rem; font-weight: bold; color: #1f2937; }
+    .header-btn { background: #eff6ff; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-weight: 500; }
+    .header-btn:hover { background: #dbeafe; }
+  </style>
+  <style>
+    .offcanvas {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 350px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      visibility: hidden;
+      z-index: 1050;
+    }
+
+    .offcanvas.show {
+      visibility: visible;
+    }
+
+    .offcanvas-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .offcanvas-body {
+      padding: 1rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+
+<body class="bg-white">
+  <div class="page">
+    {% include 'smq/includes/sidebar.html' with pagename=pagename %}
+
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between">
+          <h2 class="page-title">Tableau de bord du SMQ</h2>
+          <div class="d-flex gap-3">
+            <a href="#" id="off-canvas-notification" class="btn btn-icon position-relative" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-icon lucide-bell">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+              </svg>
+              <span id="badge-soumissions" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; color: white; display: none;"></span>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="container-xl">
+
+          <!-- KPI Cards -->
+          <div class="row g-3 my-3 mt-1 pt-1" id="kpiCards">
+            <div class="col-4">
+              <div class="card-metric">
+                <h3>KPIs reçus</h3>
+                <div class="display-4" id="templatesPartages">{{ kpis_recus_count }}</div>
+                <small class="text-muted" id="templatesPartagesLabel">Ce mois</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="card-metric">
+                <h3>Rapports générés</h3>
+                <div class="display-4" id="rapportsGeneres">{{ rapports_generes_count }}</div>
+                <small class="text-muted" id="rapportsGeneresLabel">Ce mois</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="card-metric">
+                <h3>Taux validation</h3>
+                <div class="display-4" id="tauxValidation">{{ taux_validation|floatformat:2 }}%</div>
+                <small class="text-muted" id="tauxValidationLabel">KPI validés</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphiques -->
+          <div class="row g-3 mb-0 pb-0">
+            <!-- Graphique KPI -->
+            <div class="col-6">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h3 class="card-title" style="font-size: 14px;">Évolution du KPI</h3>
+                  <form id="filterForm" method="get" class="d-flex me-2">
+                    <select name="departement" class="form-select"
+                            style="height: 27px; padding-top: 3px; width: auto;"
+                            onchange="document.getElementById('filterForm').submit();">
+                      {% for val, label in departements %}
+                        <option value="{{ val }}" {% if val == filtre_departement %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                  <select id="kpi-selector" class="form-select" style="max-width: 200px; height: 28px; padding-top: 3px;">
+                    {% for kpi_name, data in kpi_chart_data.items %}
+                      <option value="{{ kpi_name }}">{{ kpi_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="card-body" style="padding-bottom: 0px;">
+                  <div id="chart-kpi" style="min-height: 250px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Graphique Rapports générés -->
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Rapports générés</h3>
+                </div>
+                <div class="card-body">
+                  <div id="reportLineChart" style="height: 250px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Off-canvas notifications -->
+  <div id="offCanvas" class="offcanvas offcanvas-end" tabindex="-1">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Soumissions en attente</h5>
+      <button type="button" class="btn-close d-flex align-items-center justify-content-center p-1" aria-label="Close" id="closeOffCanvas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="offcanvas-body" id="offCanvasBody" style="max-height: 400px; overflow-y: auto;">
+      <p class="text-muted">Chargement...</p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{% static 'libs/tabler/js/tabler.min.js' %}"></script>
+  <script src="{% static 'js/apexcharts.js' %}"></script>
+
+  {{ kpi_chart_data|json_script:"kpi_data_json" }}
+
+  <script>
+    const kpiData = JSON.parse(document.getElementById("kpi_data_json").textContent);
+    const kpiSelector = document.getElementById("kpi-selector");
+    const chartKpiContainer = document.getElementById("chart-kpi");
+    let kpiChartInstance = null;
+
+    function showKpiChart(kpiName) {
+      if (kpiChartInstance) kpiChartInstance.destroy();
+      const data = kpiData[kpiName];
+      if (!data) return;
+
+      const formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long' });
+      const formattedLabels = data.labels.map(label => {
+        if (label.includes("/")) {
+          const [monthStr, yearStr] = label.split("/");
+          return `${formatter.format(new Date(parseInt(yearStr, 10), parseInt(monthStr, 10) - 1))} ${yearStr}`;
+        }
+        return label;
+      });
+
+      const options = {
+        chart: { type: 'line', height: 240, toolbar: { show: false } },
+        series: [{ name: 'Valeur', data: data.values }],
+        xaxis: { categories: formattedLabels },
+        stroke: { curve: 'smooth' },
+        markers: { size: 4 },
+        colors: ['#f59e0b'],
+        yaxis: { labels: { formatter: val => data.is_percent ? val + "%" : val } },
+        tooltip: { y: { formatter: val => data.is_percent ? val + " %" : val } },
+        dataLabels: { enabled: true },
+        responsive: [{ breakpoint: 768, options: { chart: { height: 250 } } }]
+      };
+
+      kpiChartInstance = new ApexCharts(chartKpiContainer, options);
+      kpiChartInstance.render();
+    }
+
+    kpiSelector.addEventListener("change", e => showKpiChart(e.target.value));
+    if (kpiSelector.options.length > 0) showKpiChart(kpiSelector.options[0].value);
+  </script>
+
+  <script>
+    const reportData = {{ report_chart_data|safe }};
+    const reportChart = new ApexCharts(document.querySelector("#reportLineChart"), {
+      chart: { type: 'line', height: 245, toolbar: { show: false } },
+      series: [{ name: "Rapports générés", data: reportData.values }],
+      xaxis: { categories: reportData.labels },
+      stroke: { curve: 'smooth' },
+      markers: { size: 3 },
+      colors: ['#3b82f6'],
+      dataLabels: { enabled: true }
+    });
+    reportChart.render();
+  </script>
+
+  <script>
+    const offCanvasBtn = document.getElementById("off-canvas-notification");
+    const offCanvas = document.getElementById("offCanvas");
+    const closeOffCanvasBtn = document.getElementById("closeOffCanvas");
+    const offCanvasBody = document.getElementById("offCanvasBody");
+
+    offCanvasBtn.addEventListener("click", () => {
+      // Afficher l'off-canvas
+      offCanvas.classList.add("show");
+      offCanvas.style.visibility = "visible";
+      offCanvas.style.transform = "translateX(0)";
+
+      // Charger les soumissions via AJAX
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          if (data.soumissions.length === 0) {
+            offCanvasBody.innerHTML = '<p class="text-muted">Aucune soumission en attente.</p>';
+            return;
+          }
+
+          const list = document.createElement("ul");
+          list.className = "list-group list-group-flush";
+
+          data.soumissions.forEach(s => {
+            const item = document.createElement("li");
+            item.className = "list-group-item border rounded-2";
+            item.innerHTML = `
+              <strong>${s.kpi}</strong><br/>
+              Valeur : ${s.valeur}<br/>
+              Période : ${s.periode_mois}/${s.periode_annee}<br/>
+              Soumis par : ${s.soumis_par}<br/>
+              Département : ${s.departement}<br/>
+              ${s.observation ? "Observation : " + s.observation.substring(0, 50) : ""}
+            `;
+            list.appendChild(item);
+          });
+
+          offCanvasBody.innerHTML = "";
+          offCanvasBody.appendChild(list);
+        })
+        .catch(err => {
+          offCanvasBody.innerHTML = '<p class="text-danger">Erreur lors du chargement.</p>';
+          console.error(err);
+        });
+    });
+
+    closeOffCanvasBtn.addEventListener("click", () => {
+      offCanvas.classList.remove("show");
+      offCanvas.style.transform = "translateX(100%)";
+      setTimeout(() => offCanvas.style.visibility = "hidden", 300);
+    });
+  </script>
+
+  <script>
+    const badge = document.getElementById("badge-soumissions");
+
+    function updateBadgeCount() {
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          const count = data.soumissions.length;
+          if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = "inline-block";
+          } else {
+            badge.style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Erreur lors de la récupération du badge:", err);
+        });
+    }
+
+    // Mettre à jour au chargement de la page
+    updateBadgeCount();
+
+    // Optionnel : rafraîchir toutes les 30 secondes
+    setInterval(updateBadgeCount, 30000);
+  </script>
+
+</body>
+
+</html>

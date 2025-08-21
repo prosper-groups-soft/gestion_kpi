@@ -1,0 +1,71 @@
+{% load static %}
+<!-- Sidebar -->
+<aside class="navbar navbar-vertical navbar-expand-sm ps-1 pe-1 d-flex flex-column justify-content-between" style="background-color: #f9f9f9;">
+  <div class="w-100">
+    <h1 class="navbar-brand navbar-brand-autodark w-100 text-center mt-2">
+      <a href="#">
+        <img src="{% static 'images/auto-lubumbashi-logo.webp' %}" class="rounded-circle" width="60" height="60" alt="Logo SMQ" />
+      </a>
+    </h1>
+    <div class="collapse navbar-collapse" id="sidebar-menu">
+      <ul class="nav nav-pills nav-vertical navbar-nav pt-lg-3 px-1">
+        <li class="nav-item {% if pagename == 'tableau-bord' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'smq/tableau-bord' %}">
+            <span class="nav-link-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-gauge-icon lucide-gauge">
+                <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+              </svg>
+            </span>
+            Tableau de bord
+          </a>
+        </li>
+        <li class="nav-item {% if pagename == 'kpi' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'smq/kpi' %}">
+            <span class="nav-link-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-bar-icon lucide-chart-bar">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16h8"/><path d="M7 11h12"/><path d="M7 6h3"/>
+              </svg>
+            </span>
+            KPI
+          </a>
+        </li>
+        <li class="nav-item {% if pagename == 'rapports-kpi' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'smq/rapports-kpi' %}">
+            <span class="nav-link-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-spreadsheet-icon lucide-file-spreadsheet">
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>
+              </svg>
+            </span>
+            Rapport KPI
+          </a>
+        </li>
+        <li class="nav-item {% if pagename == 'utilisateurs' %}selected{% endif %}">
+          <a class="nav-link" href="{% url 'smq/utilisateurs' %}">
+            <span class="nav-link-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-icon lucide-user">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            Utilisateurs
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Bloc utilisateur -->
+  <div class="py-2 border bg-white rounded-3 d-flex mb-2">
+    {% with profile=request.user.userprofile %}
+      <img src="{% static 'images/profil.png' %}" alt="Photo Utilisateur" class="rounded-circle mx-1" width="40" height="40">
+      <div>
+        <div class="fw-bold text-truncate" style="width: 145px;">
+          {{ request.user.get_full_name }}
+        </div>
+        <div class="text-muted small text-truncate" style="width: 145px;">
+          D:{{ profile.departement }}
+        </div>
+      </div>
+    {% endwith %}
+  </div>
+
+</aside>

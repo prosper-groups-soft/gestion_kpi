@@ -1,0 +1,19 @@
+[
+  {
+    "model": "Departement.kpi",
+    "pk": 3,
+    "fields": {
+      "nom": "Turnover/ Taux de roulement du personnel",
+      "formule": "Nbre de départs / Effectif total d’agents x100",
+      "frequence": "Semestrielle",
+      "departement": "Ressources humaines",
+      "formule_mathjax": "\\dfrac{\\text{Nombre de départs}}{\\text{Effectif total d’agents}} \\times 100",
+      "valeur_cible": "≤ 5%",
+      "periode_annee": 2025,
+      "periode_mois": 0,
+      "source_type": "base",
+      "soumis_par": null,
+      "date_soumission": "2025-08-01T00:00:00Z"
+    }
+  }
+]

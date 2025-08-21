@@ -1,0 +1,273 @@
+{% load static filters_depart %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Admin | Tableau de bord</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.css' %}" />
+  <style>
+    * { font-family: "Noto Sans" !important; }
+    .selected, .nav-link:hover {
+      background-color: #a2b8ff;
+      border-radius: 6px;
+      color: #000 !important;
+    }
+    .nav-link { 
+      color: #000 !important; 
+    }
+    .card-metric {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+    .card-metric h3 {
+      font-size: 1rem;
+      color: #374151;
+    }
+    .card-metric .display-4 {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #1f2937;
+    }
+  </style>
+</head>
+
+<body class="bg-white">
+  <div class="page">
+
+    {% include 'departement/includes/sidebar.html' with pagename=pagename %}
+
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between">
+          <h2 class="page-title">Tableau de bord</h2>
+          <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+            <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
+              <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="page-body">
+        <div class="container-xl">
+          <!-- Cartes -->
+          <div class="row row-cards mb-4">
+            <div class="col-6">
+              <div class="card card-metric pt-0" style="height: 145px;">
+                <div class="card-body">
+                  <h3 class="card-title">Soumissions</h3>
+                  <div class="display-4">{{ soumissions_count }}</div>
+                  <small class="text-muted">Ce mois</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="card card-metric pt-0" style="height: 145px;">
+                <div class="card-body">
+                  <h3 class="card-title">Taux validation</h3>
+                  <div class="display-4">{{ taux_validation }}%</div>
+                  <small class="text-muted">Soumissions validées</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphiques -->
+          <div class="row">
+            <div class="col-4">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Évolution des soumissions</h3>
+                </div>
+                <div class="card-body">
+                  <div id="submissionsChart" style="height: 230px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Taux de validation mensuel</h3>
+                </div>
+                <div class="card-body">
+                  <div id="templatesChart" style="height: 230px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-4">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h3 class="card-title" style="font-size: 14px;">
+                    Évolution du KPI
+                  </h3>
+                  <select id="kpi-selector" class="form-select" style="max-width: 200px; height: 28px; padding-top: 3px;">
+                    {% for kpi_name, data in kpi_chart_data.items %}
+                      {% with kpi_slug=kpi_name|slugify|replace_character:"-,_" %}
+                        <option value="{{ kpi_slug }}">{{ kpi_name }}</option>
+                      {% endwith %}
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="card-body" style="padding-bottom: 0px;">
+                  <div id="chart-kpi" style="height: 230px;"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="{% static 'libs/tabler/js/tabler.js' %}"></script>
+  <script src="{% static 'js/apexcharts.js' %}"></script>
+  <script>
+    const moisLabels = {{ mois_labels|safe }};
+    const soumissionsData = {{ submissions_series|safe }};
+    const validationData = {{ validation_series|safe }};
+
+    const submissionsChart = new ApexCharts(document.querySelector("#submissionsChart"), {
+      chart: { type: 'line', height: 250, toolbar: { show: false } },
+      series: [{
+        name: 'Soumissions',
+        data: soumissionsData
+      }],
+      xaxis: { categories: moisLabels },
+      colors: ['#3b82f6'],
+      stroke: { curve: 'smooth' },
+      markers: { size: 2 }
+    });
+    submissionsChart.render();
+
+    const templatesChart = new ApexCharts(document.querySelector("#templatesChart"), {
+      chart: { type: 'line', height: 250, toolbar: { show: false } },
+      series: [{
+        name: 'Taux de validation (%)',
+        data: validationData
+      }],
+      xaxis: { categories: moisLabels },
+      yaxis: {
+        min: 0,
+        max: 100,
+        labels: {
+          formatter: function (val) {
+            return val + "%";
+          }
+        }
+      },
+      colors: ['#6366f1'],
+      stroke: { curve: 'smooth' },
+      markers: { size: 2 },
+      tooltip: {
+        y: {
+          formatter: function (val) {
+            return val + " % validés";
+          }
+        }
+      }
+    });
+    templatesChart.render();
+  </script>
+
+  <script>
+    // Stocke les données de tous les graphiques de KPI
+    const kpiData = {
+      {% for kpi_name, data in kpi_chart_data.items %}
+        {% with kpi_slug=kpi_name|slugify|replace_character:"-,_" %}
+          "{{ kpi_slug }}": {
+            labels: {{ data.labels|safe }},
+            values: {{ data.values|safe }},
+            isPercent: {{ data.is_percent|yesno:"true,false" }}
+          },
+        {% endwith %}
+      {% endfor %}
+    };
+
+    // Sélectionne le menu déroulant et le conteneur du graphique
+    const kpiSelector = document.getElementById("kpi-selector");
+    const chartKpiContainer = document.getElementById("chart-kpi");
+    let kpiChartInstance = null; // Variable pour stocker le graphique actuel
+
+    // Fonction pour afficher un graphique spécifique
+    function showKpiChart(kpiSlug) {
+      if (kpiChartInstance) {
+        kpiChartInstance.destroy();
+      }
+
+      const data = kpiData[kpiSlug];
+      if (!data) return;
+
+      // Convertit les étiquettes de date (ex: "8/2025") en noms de mois (ex: "août")
+      const formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long' });
+      const formattedLabels = data.labels.map(label => {
+        const [month, year] = label.split('/');
+        const date = new Date(year, month - 1);
+        return formatter.format(date);
+      });
+
+      const options = {
+        chart: { type: 'line', height: 250, toolbar: { show: false } },
+        series: [{ name: 'Valeur', data: data.values }],
+        xaxis: { categories: formattedLabels },
+        stroke: { curve: 'smooth' },
+        markers: { size: 3 },
+        colors: ['#f59e0b'],
+        yaxis: {
+          labels: {
+            formatter: function (val) {
+              return data.isPercent ? val + "%" : val;
+            }
+          }
+        },
+        tooltip: {
+          y: {
+            formatter: function (val) {
+              return data.isPercent ? val + " %" : val;
+            }
+          }
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: function (val) {
+            return data.isPercent ? val + "%" : val;
+          },
+          style: {
+            fontSize: '10px',
+            colors: ["#333"]
+          },
+          background: {
+            enabled: true,
+            foreColor: '#fff',
+            borderRadius: 4,
+            padding: 2,
+            opacity: 0.7
+          }
+        }
+      };
+
+      kpiChartInstance = new ApexCharts(chartKpiContainer, options);
+      kpiChartInstance.render();
+    }
+
+    // Événement pour le menu déroulant
+    kpiSelector.addEventListener("change", (e) => {
+      showKpiChart(e.target.value);
+    });
+
+    // Affiche le premier graphique par défaut au chargement de la page
+    if (kpiSelector.value) {
+      showKpiChart(kpiSelector.value);
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,431 @@
+{% load custom_filters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>SMQ | Rapport KPI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{% static 'libs/tabler/css/tabler.css' %}" />
+  <style>
+    * { font-family: "Noto Sans" !important; }
+    .selected, .nav-link:hover {
+      background-color: #a2b8ff;
+      border-radius: 6px;
+      color: #000 !important;
+    }
+    .nav-link { color: #000 !important; }
+    .input-search:focus {
+      border-color: #80aad3;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
+    }
+    .input-search:focus {
+      border-color: #80aad3;
+      outline: 0;
+      box-shadow: 0 1px 1px rgba(252, 253, 254, 0.06), 0 0 0 0.25rem rgba(0, 84, 166, 0.25) !important;
+    }
+  </style>
+    <style>
+    .offcanvas {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 350px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      visibility: hidden;
+      z-index: 1050;
+    }
+
+    .offcanvas.show {
+      visibility: visible;
+    }
+
+    .offcanvas-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .offcanvas-body {
+      padding: 1rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+
+</head>
+
+<body class="bg-white">
+  <div class="page">
+
+    <!-- Sidebar -->
+    {% include 'smq/includes/sidebar.html' with pagename=pagename %}
+
+    <!-- Page wrapper -->
+    <div class="page-wrapper">
+      <div class="page-header">
+        <div class="container-xl d-flex justify-content-between align-items-center">
+          <h2 class="page-title">Rapport KPI</h2>
+          <div class="d-flex gap-3">
+            <a href="#" id="off-canvas-notification" class="btn btn-icon position-relative" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-icon lucide-bell">
+                <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+              </svg>
+              <span id="badge-soumissions" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px; color: white; display: none;"></span>
+            </a>
+            <a href="{% url 'logout' %}" class="btn btn-icon" style="min-width: 24px; min-height: 24px; padding: 2px;">
+              <svg xmlns="http://www.w3.org/2000/svg" style="height: 20px; width: 20px;" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-body mt-3">
+        <div class="container-xl">
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+          
+            <form method="get" class="d-flex justify-content-between align-items-center mb-4 w-100" style="gap:1rem;">
+              <div style="width: 450px;">
+                <div class="input-icon">
+                  <span class="input-icon-addon">
+                    <!-- loupe -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                  </span>
+                  <input
+                    type="text" name="q" value="{{ search_query }}"
+                    class="form-control border-0 shadow-none rounded-3 input-search"
+                    style="height: 34px; background-color: rgba(0, 0, 0, 0.03);"
+                    placeholder="Rechercher (nom, département, commentaire)…" />
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end align-items-center gap-2">
+                <!-- Année -->
+                <select name="year" class="form-select" style="width: auto; height: 26px; padding-top: 2px;" onchange="this.form.submit()">
+                  <option value="">Toutes les années</option>
+                  {% for y in years %}
+                    <option value="{{ y.year }}" {% if year_filter|stringformat:'s' == y.year|stringformat:'s' %}selected{% endif %}>{{ y.year }}</option>
+                  {% endfor %}
+                </select>
+
+                <!-- Mois -->
+                <select name="month" class="form-select" style="width: auto; height: 26px; padding-top: 2px;" onchange="this.form.submit()">
+                  <option value="">Tous les mois</option>
+                  {% for mnum, mlabel in months %}
+                    <option value="{{ mnum }}" {% if month_filter|stringformat:'s' == mnum|stringformat:'s' %}selected{% endif %}>{{ mlabel }}</option>
+                  {% endfor %}
+                </select>
+
+                <!-- BOUTON GÉNÉRER (action traitée à l'étape 2) -->
+                <button type="button" class="btn btn-primary me-2" style="height: 27px;" data-bs-target="#modal-add-rapport" data-bs-toggle="modal">
+                  Générer rapport
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+          <!-- Tableau -->
+          <div class="table-responsive" style="max-height: 442px; height: 442px; overflow-y: auto;">
+            <table class="table table-vcenter">
+              <thead>
+                <tr>
+                  <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                    Nom du rapport
+                  </th>
+                  <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                    Date de génération
+                  </th>
+                  <th class="border-0" style="background-color: rgba(0, 0, 0, 0.015) !important;">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in page_obj %}
+                  <tr>
+                    <td>{{ r.nom }}</td>
+                    <td>{{ r.generated_at|date:"d/m/Y H:i" }}</td>
+                    <td>
+                      <!-- Ouvrir la modale de visualisation avec les données du rapport -->
+                      <a href="#" class="me-2 text-dark"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-view-rapport"
+                        data-rapport-nom="{{ r.nom }}"
+                        data-rapport-departement="{{ r.departement }}"
+                        data-rapport-periode="{{ r.periode|date:'F Y' }}"
+                        data-rapport-commentaires="{{ r.commentaires|default:'—' }}"
+                        {% if r.historique_de %}data-rapport-hde="{{ r.historique_de|date:'d/m/Y' }}"{% endif %}
+                        {% if r.historique_a %}data-rapport-ha="{{ r.historique_a|date:'d/m/Y' }}"{% endif %}
+                        {% if r.pdf %}
+                          data-rapport-pdf="{% url 'view-pdf' r.pdf.name|filename %}"
+                        {% endif %}
+                        >
+                        <!-- icône œil -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline">
+                          <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </a>
+
+                      <!-- Suppression -->
+                      <a href="{% url 'smq/delete-rapport-kpi' r.id %}" class="text-red"
+                        onclick="return confirm('Supprimer ce rapport ?');">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline">
+                          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+                        </svg>
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" rowspan="10" class="text-center text-muted">Aucun rapport.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% include "smq/includes/pagination.html" with page_obj=page_obj %}
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale ajout rapport KPI -->
+  <div class="modal fade" id="modal-add-rapport" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+      <div class="modal-content">
+        <div class="modal-header" style="min-height: 40px;">
+          <h5 class="modal-title">Générer un rapport KPI</h5>
+          <button type="button" class="btn-close" style="width: 40px; height: 40px;" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+
+          <form method="post" id="form-generate-report" action="{% url 'smq/generate-rapport-kpi' %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label class="form-label">Mois de l'année courante</label>
+              <select name="mois" class="form-select" required style="height: 30px; padding-top: 4px;">
+                {% for nm, m in months %}
+                  <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Historique</label>
+              <div class="d-flex gap-2">
+                <div class="flex-fill">
+                  <label class="form-label small">De</label>
+                  <input type="date" name="historique_de" class="form-control" style="height: 27px; padding-top: 3px;">
+                </div>
+                <div class="flex-fill">
+                  <label class="form-label small">À</label>
+                  <input type="date" name="historique_a" class="form-control" style="height: 27px; padding-top: 3px;">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Commentaires (optionnel)</label>
+              <textarea name="commentaires" class="form-control" rows="4" placeholder="Indiquez le contexte ou les précisions pour le rapport..."></textarea>
+            </div>
+          </form>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-bs-dismiss="modal" style="height: 27px;">Annuler</button>
+          <button form="form-generate-report" id="btn-generate-report" class="btn btn-primary" style="height: 27px;">
+            <span class="spinner-border spinner-border-sm me-2" id="spinner-generate" style="display: none;"></span>
+            Générer le rapport
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale visualisation rapport KPI -->
+  <div class="modal fade" id="modal-view-rapport" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" style="width: 1000px; max-width: 1000px; min-width: 950px;">
+      <div class="modal-content">
+        <div class="modal-header" style="min-height: 40px;">
+          <h5 class="modal-title">Visualiser le rapport KPI</h5>
+          <button type="button" class="btn-close" style="width: 40px; height: 40px;" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <h6 class="fw-bold">Graphiques / PDF</h6>
+            <!-- Prévisualisation PDF dynamique -->
+            <iframe id="view-pdf-frame" src="" style="width:100%; height:500px;" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-bs-dismiss="modal" style="height: 27px;">Fermer</button>
+          <a id="view-pdf-link" class="btn btn-primary" style="height: 27px;" target="_blank">
+            Télécharger le PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Off-canvas notifications -->
+  <div id="offCanvas" class="offcanvas offcanvas-end" tabindex="-1">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Soumissions en attente</h5>
+      <button type="button" class="btn-close d-flex align-items-center justify-content-center p-1" aria-label="Close" id="closeOffCanvas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="offcanvas-body" id="offCanvasBody" style="max-height: 400px; overflow-y: auto;">
+      <p class="text-muted">Chargement...</p>
+    </div>
+  </div>
+
+  <script src="{% static 'libs/tabler/js/tabler.js' %}"></script>
+  <script>
+    const viewModal = document.getElementById('modal-view-rapport');
+
+    viewModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;                   // bouton cliqué
+      const pdf = btn.getAttribute('data-rapport-pdf');  // récupère l'URL du PDF
+
+      const link = document.getElementById('view-pdf-link');
+      const pdfFrame = document.getElementById('view-pdf-frame');
+
+      if (pdf) {
+          link.classList.remove('disabled');
+          link.setAttribute('aria-disabled', 'false');
+          link.href = pdf;
+          pdfFrame.src = pdf;  // Affiche le PDF dans l'iframe
+      } else {
+          link.classList.add('disabled');
+          link.setAttribute('aria-disabled', 'true');
+          link.removeAttribute('href');
+          pdfFrame.src = "";  // Vide l'iframe si pas de PDF
+      }
+    });
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("form-generate-report");
+        const spinner = document.getElementById("spinner-generate");
+        const btn = document.getElementById("btn-generate-report");
+
+        form.addEventListener("submit", function () {
+            spinner.style.display = "inline-block"; // Affiche le spinner
+            btn.disabled = true; // Désactive le bouton
+            btn.style.opacity = "0.7"; // Optionnel : effet visuel
+        });
+    });
+  </script>
+
+    <script>
+    const offCanvasBtn = document.getElementById("off-canvas-notification");
+    const offCanvas = document.getElementById("offCanvas");
+    const closeOffCanvasBtn = document.getElementById("closeOffCanvas");
+    const offCanvasBody = document.getElementById("offCanvasBody");
+
+    offCanvasBtn.addEventListener("click", () => {
+      // Afficher l'off-canvas
+      offCanvas.classList.add("show");
+      offCanvas.style.visibility = "visible";
+      offCanvas.style.transform = "translateX(0)";
+
+      // Charger les soumissions via AJAX
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          if (data.soumissions.length === 0) {
+            offCanvasBody.innerHTML = '<p class="text-muted">Aucune soumission en attente.</p>';
+            return;
+          }
+
+          const list = document.createElement("ul");
+          list.className = "list-group list-group-flush";
+
+          data.soumissions.forEach(s => {
+            const item = document.createElement("li");
+            item.className = "list-group-item border rounded-2";
+            item.innerHTML = `
+              <strong>${s.kpi}</strong><br/>
+              Valeur : ${s.valeur}<br/>
+              Période : ${s.periode_mois}/${s.periode_annee}<br/>
+              Soumis par : ${s.soumis_par}<br/>
+              Département : ${s.departement}<br/>
+              ${s.observation ? "Observation : " + s.observation.substring(0, 50) : ""}
+            `;
+            list.appendChild(item);
+          });
+
+          offCanvasBody.innerHTML = "";
+          offCanvasBody.appendChild(list);
+        })
+        .catch(err => {
+          offCanvasBody.innerHTML = '<p class="text-danger">Erreur lors du chargement.</p>';
+          console.error(err);
+        });
+    });
+
+    closeOffCanvasBtn.addEventListener("click", () => {
+      offCanvas.classList.remove("show");
+      offCanvas.style.transform = "translateX(100%)";
+      setTimeout(() => offCanvas.style.visibility = "hidden", 300);
+    });
+  </script>
+
+  <script>
+    const badge = document.getElementById("badge-soumissions");
+
+    function updateBadgeCount() {
+      fetch("{% url 'soumissions_en_attente' %}")
+        .then(response => response.json())
+        .then(data => {
+          const count = data.soumissions.length;
+          if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = "inline-block";
+          } else {
+            badge.style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Erreur lors de la récupération du badge:", err);
+        });
+    }
+
+    // Mettre à jour au chargement de la page
+    updateBadgeCount();
+
+    // Optionnel : rafraîchir toutes les 30 secondes
+    setInterval(updateBadgeCount, 30000);
+  </script>
+
+
+</body>
+</html>
+

@@ -1,0 +1,19 @@
+[
+  {
+    "model": "Departement.kpi",
+    "pk": 28,
+    "fields": {
+      "nom": "Taux de fidélisation des clients Garage",
+      "formule": "Nbre de clients revenus pour entretien / Nbre total de clients prévus pour prochain entretien X 100",
+      "formule_mathjax": "\\dfrac{\\text{Clients revenus}}{\\text{Clients prévus}} \\times 100",
+      "frequence": "Semestrielle",
+      "departement": "Garage",
+      "valeur_cible": "≥75%",
+      "periode_annee": 2025,
+      "periode_mois": 8,
+      "soumis_par": null,
+      "date_soumission": "2025-08-01T00:00:00Z",
+      "source_type": "fichier"
+    }
+  }
+]
